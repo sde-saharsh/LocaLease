@@ -4,7 +4,7 @@ const Item = require('../models/Item');
 // @route   GET /api/items
 exports.getItems = async (req, res) => {
   try {
-    const { category, search, minPrice, maxPrice } = req.query;
+    const { category, search, minPrice, maxPrice, lat, lng, radius, city } = req.query;
     let query = { available: true };
 
     if (category) query.category = category;
@@ -13,6 +13,24 @@ exports.getItems = async (req, res) => {
       query.price = {};
       if (minPrice) query.price.$gte = Number(minPrice);
       if (maxPrice) query.price.$lte = Number(maxPrice);
+    }
+
+    // Same-city filter: match city name anywhere in the address field
+    if (city && !lat) {
+      query.address = { $regex: city.trim(), $options: 'i' };
+    }
+
+    // Nearby filter: geo-spatial query (overrides city filter if both lat+lng are present)
+    if (lat && lng) {
+      query.location = {
+        $near: {
+          $geometry: {
+            type: 'Point',
+            coordinates: [parseFloat(lng), parseFloat(lat)]
+          },
+          $maxDistance: (parseFloat(radius) || 5) * 1000 // radius in km, default 5 km
+        }
+      };
     }
 
     const items = await Item.find(query).populate('owner', 'name avatar rating');

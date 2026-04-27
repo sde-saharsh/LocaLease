@@ -14,20 +14,30 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.localease.app"
+      "bundleIdentifier": "com.localease.app",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "LocaLease needs your location to show items near you."
+      }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#4F46E5"
       },
-      "package": "com.localease.app"
+      "package": "com.localease.app",
+      "permissions": ["ACCESS_FINE_LOCATION", "ACCESS_COARSE_LOCATION"]
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
-      "expo-font"
+      "expo-font",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "LocaLease needs your location to find rentals near you."
+        }
+      ]
     ]
   }
 }

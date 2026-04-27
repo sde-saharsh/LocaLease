@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useReducer, useCallback } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as Location from 'expo-location';
 import { USERS, ITEMS, REQUESTS } from '../data/mockData';
 
 const AppContext = createContext();
@@ -17,6 +18,9 @@ const initialState = {
   searchQuery: '',
   selectedCategory: null,
   loading: false,
+  userLocation: null,      // { lat, lng, city }
+  locationFilter: 'all',  // 'all' | 'nearby' | 'city'
+  locationLoading: false,
 };
 
 const ActionTypes = {
@@ -34,6 +38,9 @@ const ActionTypes = {
   SET_ITEMS: 'SET_ITEMS',
   SET_REQUESTS: 'SET_REQUESTS',
   SET_TOKEN: 'SET_TOKEN',
+  SET_USER_LOCATION: 'SET_USER_LOCATION',
+  SET_LOCATION_FILTER: 'SET_LOCATION_FILTER',
+  SET_LOCATION_LOADING: 'SET_LOCATION_LOADING',
 };
 
 function appReducer(state, action) {
@@ -140,6 +147,21 @@ function appReducer(state, action) {
         ...state,
         token: action.payload,
       };
+    case ActionTypes.SET_USER_LOCATION:
+      return {
+        ...state,
+        userLocation: action.payload,
+      };
+    case ActionTypes.SET_LOCATION_FILTER:
+      return {
+        ...state,
+        locationFilter: action.payload,
+      };
+    case ActionTypes.SET_LOCATION_LOADING:
+      return {
+        ...state,
+        locationLoading: action.payload,
+      };
     default:
       return state;
   }
@@ -148,7 +170,9 @@ function appReducer(state, action) {
 export function AppProvider({ children }) {
   const [state, dispatch] = useReducer(appReducer, initialState);
 
-  const API_URL = 'http://localhost:5000/api';
+  // Production: Render backend URL
+  // For local dev, change to: 'http://localhost:5000/api'  or  'http://<your-local-ip>:5000/api'
+  const API_URL = 'https://rentalapp-backend.onrender.com/api';
 
   // Load token and user on startup
   React.useEffect(() => {
@@ -171,9 +195,15 @@ export function AppProvider({ children }) {
     loadStorageData();
   }, []);
 
-  const fetchItems = useCallback(async () => {
+  const fetchItems = useCallback(async (locationParams = {}) => {
     try {
-      const res = await fetch(`${API_URL}/items`);
+      const params = new URLSearchParams();
+      if (locationParams.lat) params.append('lat', locationParams.lat);
+      if (locationParams.lng) params.append('lng', locationParams.lng);
+      if (locationParams.radius) params.append('radius', locationParams.radius);
+      if (locationParams.city) params.append('city', locationParams.city);
+      const query = params.toString();
+      const res = await fetch(`${API_URL}/items${query ? `?${query}` : ''}`);
       const data = await res.json();
       if (res.ok) dispatch({ type: ActionTypes.SET_ITEMS, payload: data });
     } catch (err) {
@@ -276,6 +306,42 @@ export function AppProvider({ children }) {
     dispatch({ type: ActionTypes.LOGOUT });
   }, []);
 
+  // ─── Location ────────────────────────────────────────────────────────────────
+
+  /**
+   * Requests foreground location permission, fetches GPS coords, and reverse-
+   * geocodes to extract the city name. Stores result in userLocation state.
+   */
+  const requestUserLocation = useCallback(async () => {
+    dispatch({ type: ActionTypes.SET_LOCATION_LOADING, payload: true });
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        dispatch({ type: ActionTypes.SET_LOCATION_LOADING, payload: false });
+        return { success: false, message: 'Location permission denied' };
+      }
+      const pos = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.Balanced,
+      });
+      const { latitude, longitude } = pos.coords;
+      const [geo] = await Location.reverseGeocodeAsync({ latitude, longitude });
+      const city =
+        geo?.city || geo?.subregion || geo?.district || geo?.region || 'Your City';
+      const locationData = { lat: latitude, lng: longitude, city };
+      dispatch({ type: ActionTypes.SET_USER_LOCATION, payload: locationData });
+      dispatch({ type: ActionTypes.SET_LOCATION_LOADING, payload: false });
+      return { success: true, location: locationData };
+    } catch (err) {
+      console.error('Location error:', err);
+      dispatch({ type: ActionTypes.SET_LOCATION_LOADING, payload: false });
+      return { success: false, message: err.message };
+    }
+  }, []);
+
+  const setLocationFilter = useCallback((filter) => {
+    dispatch({ type: ActionTypes.SET_LOCATION_FILTER, payload: filter });
+  }, []);
+
   const toggleDarkMode = useCallback(() => {
     dispatch({ type: ActionTypes.TOGGLE_DARK_MODE });
   }, []);
@@ -374,6 +440,9 @@ export function AppProvider({ children }) {
     updateRequestStatus,
     createRequest,
     updateProfile,
+    fetchItems,
+    requestUserLocation,
+    setLocationFilter,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

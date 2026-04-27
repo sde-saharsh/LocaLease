@@ -15,7 +15,11 @@ const itemSchema = new mongoose.Schema({
     required: true,
     enum: ['New', 'Like New', 'Good', 'Fair']
   },
-  location: { type: String, required: true },
+  address: { type: String, required: true },
+  location: {
+    type: { type: String, enum: ['Point'], default: 'Point' },
+    coordinates: { type: [Number], default: [0, 0] } // [longitude, latitude]
+  },
   distance: { type: String, default: '0 km' },
   deposit: { type: Number, required: true },
   minRental: { type: Number, default: 1 },
@@ -28,7 +32,8 @@ const itemSchema = new mongoose.Schema({
   featured: { type: Boolean, default: false },
   rating: { type: Number, default: 0 },
   reviews: { type: Number, default: 0 },
-  totalRentals: { type: Number, default: 0 },
 }, { timestamps: true });
+
+itemSchema.index({ location: '2dsphere' });
 
 module.exports = mongoose.model('Item', itemSchema);
