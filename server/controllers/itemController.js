@@ -1,0 +1,96 @@
+const Item = require('../models/Item');
+
+// @desc    Get all items (with filters)
+// @route   GET /api/items
+exports.getItems = async (req, res) => {
+  try {
+    const { category, search, minPrice, maxPrice } = req.query;
+    let query = { available: true };
+
+    if (category) query.category = category;
+    if (search) query.title = { $regex: search, $options: 'i' };
+    if (minPrice || maxPrice) {
+      query.price = {};
+      if (minPrice) query.price.$gte = Number(minPrice);
+      if (maxPrice) query.price.$lte = Number(maxPrice);
+    }
+
+    const items = await Item.find(query).populate('owner', 'name avatar rating');
+    res.json(items);
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+// @desc    Create new item
+// @route   POST /api/items
+exports.createItem = async (req, res) => {
+  try {
+    console.log('Create Item request body:', req.body);
+    const item = await Item.create({
+      ...req.body,
+      owner: req.user.id,
+    });
+    console.log(`✅ Item created successfully: ${item.title}`);
+    res.status(201).json(item);
+  } catch (error) {
+    console.error('Create Item error:', error);
+    // Handle Mongoose validation errors
+    if (error.name === 'ValidationError') {
+      const messages = Object.values(error.errors).map(val => val.message);
+      return res.status(400).json({ message: messages.join(', ') });
+    }
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+// @desc    Get item by ID
+// @route   GET /api/items/:id
+exports.getItemById = async (req, res) => {
+  try {
+    const item = await Item.findById(req.params.id).populate('owner', 'name avatar rating reviews location');
+    if (item) {
+      res.json(item);
+    } else {
+      res.status(404).json({ message: 'Item not found' });
+    }
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+// @desc    Update item
+// @route   PUT /api/items/:id
+exports.updateItem = async (req, res) => {
+  try {
+    const item = await Item.findById(req.params.id);
+    if (!item) return res.status(404).json({ message: 'Item not found' });
+
+    if (item.owner.toString() !== req.user.id && req.user.role !== 'admin') {
+      return res.status(401).json({ message: 'Not authorized' });
+    }
+
+    const updatedItem = await Item.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    res.json(updatedItem);
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+// @desc    Delete item
+// @route   DELETE /api/items/:id
+exports.deleteItem = async (req, res) => {
+  try {
+    const item = await Item.findById(req.params.id);
+    if (!item) return res.status(404).json({ message: 'Item not found' });
+
+    if (item.owner.toString() !== req.user.id && req.user.role !== 'admin') {
+      return res.status(401).json({ message: 'Not authorized' });
+    }
+
+    await item.deleteOne();
+    res.json({ message: 'Item removed' });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
