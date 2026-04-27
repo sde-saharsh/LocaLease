@@ -188,7 +188,7 @@ export function AppProvider({ children }) {
       }
     }
 
-    return 'https://rentalapp-backend.onrender.com/api';
+    return 'https://localease-1o38.onrender.com/api';
   };
   const API_URL = resolveApiUrl();
 
