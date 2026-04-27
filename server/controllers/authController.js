@@ -1,9 +1,17 @@
 const User = require('../models/User');
 const jwt = require('jsonwebtoken');
 
+const JWT_SECRET =
+  (process.env.JWT_SECRET && process.env.JWT_SECRET.trim()) ||
+  'dev_fallback_jwt_secret_change_me';
+
+if (!process.env.JWT_SECRET) {
+  console.warn('JWT_SECRET is missing. Using fallback secret. Set JWT_SECRET in environment for production.');
+}
+
 // Generate JWT
 const generateToken = (id) => {
-  return jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: '30d' });
+  return jwt.sign({ id }, JWT_SECRET, { expiresIn: '30d' });
 };
 
 const registerWithRole = async (req, res, next, forcedRole = null) => {

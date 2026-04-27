@@ -175,18 +175,10 @@ export function AppProvider({ children }) {
 
   // Resolve API URL in this order:
   // 1) EXPO_PUBLIC_API_URL (recommended for custom setups)
-  // 2) localhost backend when running web on localhost
-  // 3) deployed fallback
+  // 2) deployed fallback
   const resolveApiUrl = () => {
     const envUrl = process.env.EXPO_PUBLIC_API_URL;
     if (envUrl) return envUrl;
-
-    if (Platform.OS === 'web' && typeof window !== 'undefined') {
-      const host = window.location.hostname;
-      if (host === 'localhost' || host === '127.0.0.1') {
-        return 'http://localhost:5000/api';
-      }
-    }
 
     return 'https://localease-1o38.onrender.com/api';
   };
