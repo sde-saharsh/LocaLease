@@ -19,7 +19,7 @@ export default function SignupScreen({ navigation }) {
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [role, setRole] = useState('user');
+  const [role, setRole] = useState('renter');
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
 
@@ -54,7 +54,7 @@ export default function SignupScreen({ navigation }) {
   };
 
   const roles = [
-    { key: 'user', label: 'Renter', icon: 'person-outline', desc: 'Rent items from others' },
+    { key: 'renter', label: 'Renter', icon: 'person-outline', desc: 'Rent items from others' },
     { key: 'lender', label: 'Lender', icon: 'storefront-outline', desc: 'List items for rent' },
   ];
 

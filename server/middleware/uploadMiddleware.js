@@ -6,11 +6,28 @@ const path = require('path');
 
 let storage;
 
-if (process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_CLOUD_NAME !== 'Untitled') {
+const cloudName = (process.env.CLOUDINARY_CLOUD_NAME || '').trim();
+const apiKey = (process.env.CLOUDINARY_API_KEY || '').trim();
+const apiSecret = (process.env.CLOUDINARY_API_SECRET || '').trim();
+const forceCloudinary = process.env.FORCE_CLOUDINARY === 'true';
+const isDevelopment = process.env.NODE_ENV !== 'production';
+
+// In local development, prefer local disk uploads unless explicitly forced.
+// This avoids runtime 500s from partial/invalid Cloudinary env values.
+const hasValidCloudinaryConfig =
+  cloudName &&
+  apiKey &&
+  apiSecret &&
+  cloudName !== 'Untitled' &&
+  !cloudName.startsWith('cloudinary_');
+
+const useCloudinary = hasValidCloudinaryConfig && (forceCloudinary || !isDevelopment);
+
+if (useCloudinary) {
   cloudinary.config({
-    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-    api_key: process.env.CLOUDINARY_API_KEY,
-    api_secret: process.env.CLOUDINARY_API_SECRET,
+    cloud_name: cloudName,
+    api_key: apiKey,
+    api_secret: apiSecret,
   });
 
   storage = new CloudinaryStorage({

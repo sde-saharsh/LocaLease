@@ -45,8 +45,23 @@ exports.getItems = async (req, res) => {
 exports.createItem = async (req, res) => {
   try {
     console.log('Create Item request body:', req.body);
+    const payload = { ...req.body };
+
+    // Mobile client sends "location" as plain text; backend schema expects "address".
+    if (!payload.address && payload.location && typeof payload.location === 'string') {
+      payload.address = payload.location;
+    }
+
+    // If coords are not provided by client, keep valid default Point coords.
+    if (!payload.location || typeof payload.location === 'string') {
+      payload.location = {
+        type: 'Point',
+        coordinates: [0, 0],
+      };
+    }
+
     const item = await Item.create({
-      ...req.body,
+      ...payload,
       owner: req.user.id,
     });
     console.log(`✅ Item created successfully: ${item.title}`);
@@ -88,7 +103,11 @@ exports.updateItem = async (req, res) => {
       return res.status(401).json({ message: 'Not authorized' });
     }
 
-    const updatedItem = await Item.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    const updates = { ...req.body };
+    if (!updates.address && updates.location && typeof updates.location === 'string') {
+      updates.address = updates.location;
+    }
+    const updatedItem = await Item.findByIdAndUpdate(req.params.id, updates, { new: true });
     res.json(updatedItem);
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });

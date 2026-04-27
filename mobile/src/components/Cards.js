@@ -10,7 +10,16 @@ const CARD_WIDTH = (width - Spacing.lg * 3) / 2;
 export function ItemCard({ item, onPress, compact = false }) {
   const colors = useTheme();
   const { wishlist, toggleWishlist } = useApp();
-  const isWishlisted = wishlist.includes(item.id);
+  const itemId = item?._id || item?.id;
+  const handleToggleWishlist = () => {
+    if (!itemId) return;
+    toggleWishlist(itemId);
+  };
+  const isWishlisted = wishlist.includes(itemId);
+  const coverImage = item?.images?.[0] || 'https://via.placeholder.com/600x400?text=No+Image';
+  const owner = item?.owner || {};
+  const ownerName = typeof owner?.name === 'string' ? owner.name : 'Owner';
+  const ownerAvatar = owner?.avatar || 'https://via.placeholder.com/100?text=U';
 
   const Badge = ({ text, color = colors.primary, style }) => (
     <View style={[{
@@ -41,9 +50,9 @@ export function ItemCard({ item, onPress, compact = false }) {
         }, Shadow.md]}
       >
         <View style={{ position: 'relative' }}>
-          <Image source={{ uri: item.images[0] }} style={{ width: '100%', height: 160 }} />
+          <Image source={{ uri: coverImage }} style={{ width: '100%', height: 160 }} />
           <TouchableOpacity
-            onPress={() => toggleWishlist(item.id)}
+            onPress={handleToggleWishlist}
             style={{
               position: 'absolute', top: 12, right: 12,
               width: 36, height: 36, borderRadius: 18,
@@ -58,7 +67,7 @@ export function ItemCard({ item, onPress, compact = false }) {
             />
           </TouchableOpacity>
           <Badge 
-            text={item.category} 
+            text={item.category || 'Item'} 
             style={{ position: 'absolute', bottom: 12, left: 12 }} 
           />
         </View>
@@ -95,9 +104,9 @@ export function ItemCard({ item, onPress, compact = false }) {
       }, Shadow.lg]}
     >
       <View style={{ position: 'relative' }}>
-        <Image source={{ uri: item.images[0] }} style={{ width: '100%', height: 260 }} />
+        <Image source={{ uri: coverImage }} style={{ width: '100%', height: 260 }} />
         <TouchableOpacity
-          onPress={() => toggleWishlist(item.id)}
+          onPress={handleToggleWishlist}
           style={{
             position: 'absolute', top: 20, right: 20,
             width: 48, height: 48, borderRadius: 24,
@@ -113,7 +122,7 @@ export function ItemCard({ item, onPress, compact = false }) {
         </TouchableOpacity>
         
         <View style={{ position: 'absolute', bottom: 20, left: 20, flexDirection: 'row', gap: 10 }}>
-          <Badge text={item.category} />
+          <Badge text={item.category || 'Item'} />
           {!item.available && (
             <View style={{
               paddingHorizontal: 12, paddingVertical: 6, borderRadius: 10,
@@ -165,11 +174,11 @@ export function ItemCard({ item, onPress, compact = false }) {
             activeOpacity={0.7}
             style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: colors.background, padding: 10, borderRadius: 16, borderWidth: 1, borderColor: colors.borderLight }}
           >
-            <Image source={{ uri: item.owner.avatar }} style={{ width: 34, height: 34, borderRadius: 17, marginRight: 10, borderWidth: 2, borderColor: '#FFF' }} />
+            <Image source={{ uri: ownerAvatar }} style={{ width: 34, height: 34, borderRadius: 17, marginRight: 10, borderWidth: 2, borderColor: '#FFF' }} />
             <View>
               <Text style={{ fontSize: 10, color: colors.textTertiary, fontWeight: '600' }}>Listed by</Text>
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <Text style={{ fontSize: 13, fontWeight: '800', color: colors.textPrimary }}>{item.owner.name.split(' ')[0]}</Text>
+                <Text style={{ fontSize: 13, fontWeight: '800', color: colors.textPrimary }}>{ownerName.split(' ')[0]}</Text>
                 <View style={{ marginLeft: 4, backgroundColor: '#3B82F6', borderRadius: 10, padding: 1 }}>
                   <Ionicons name="checkmark-circle" size={10} color="#FFF" />
                 </View>

@@ -6,24 +6,28 @@ const generateToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: '30d' });
 };
 
-// @desc    Register new user
-// @route   POST /api/auth/register
-exports.register = async (req, res, next) => {
+const registerWithRole = async (req, res, next, forcedRole = null) => {
   try {
     const { name, email, password, phone, role } = req.body;
     console.log(`Registration attempt for: ${email}`);
 
-    // Basic validation
     if (!name || !email || !password) {
       console.log('Registration failed: Missing required fields');
       return res.status(400).json({ message: 'Name, email and password are required' });
     }
 
-    // Check existing user
     const existing = await User.findOne({ email });
     if (existing) {
       console.log(`Registration failed: User ${email} already exists`);
       return res.status(400).json({ message: 'User already exists' });
+    }
+
+    const requestedRole = role || 'renter';
+    const finalRole = forcedRole || requestedRole;
+
+    // Never allow public self-registration as admin.
+    if (finalRole === 'admin') {
+      return res.status(403).json({ message: 'Admin registration is not allowed' });
     }
 
     const user = await User.create({
@@ -31,13 +35,13 @@ exports.register = async (req, res, next) => {
       email,
       password,
       phone: phone || '',
-      role: role || 'user',
+      role: finalRole,
     });
 
     if (user) {
       console.log(`User registered successfully: ${email}`);
       const token = generateToken(user._id);
-      res.status(201).json({
+      return res.status(201).json({
         user: {
           _id: user._id,
           name: user.name,
@@ -47,22 +51,20 @@ exports.register = async (req, res, next) => {
         },
         token,
       });
-    } else {
-      console.log('Registration failed: Database create returned null');
-      return res.status(500).json({ message: 'Failed to create user' });
     }
+
+    console.log('Registration failed: Database create returned null');
+    return res.status(500).json({ message: 'Failed to create user' });
   } catch (error) {
     console.error('Register error details:', error);
     if (error.code === 11000) {
       return res.status(400).json({ message: 'Email already in use' });
     }
-    next(error);
+    return next(error);
   }
 };
 
-// @desc    Login user
-// @route   POST /api/auth/login
-exports.login = async (req, res, next) => {
+const loginWithRole = async (req, res, next, expectedRole = null) => {
   try {
     const { email, password } = req.body;
     console.log(`Login attempt for: ${email}`);
@@ -74,28 +76,53 @@ exports.login = async (req, res, next) => {
     }
 
     const isMatch = await user.comparePassword(password);
-    if (isMatch) {
-      console.log(`Login successful: ${email}`);
-      const token = generateToken(user._id);
-      res.json({
-        user: {
-          _id: user._id,
-          name: user.name,
-          email: user.email,
-          role: user.role,
-          avatar: user.avatar,
-        },
-        token,
-      });
-    } else {
+    if (!isMatch) {
       console.log(`Login failed: Password mismatch for ${email}`);
-      res.status(401).json({ message: 'Invalid email or password' });
+      return res.status(401).json({ message: 'Invalid email or password' });
     }
+
+    const userRole = user.role === 'user' ? 'renter' : user.role;
+    if (expectedRole && userRole !== expectedRole) {
+      return res.status(403).json({
+        message: `This is a ${expectedRole} portal. Please use your correct account.`,
+      });
+    }
+
+    console.log(`Login successful: ${email}`);
+    const token = generateToken(user._id);
+    return res.json({
+      user: {
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        role: userRole,
+        avatar: user.avatar,
+      },
+      token,
+    });
   } catch (error) {
     console.error('Login error details:', error);
-    next(error);
+    return next(error);
   }
 };
+
+// @desc    Register new user
+// @route   POST /api/auth/register
+exports.register = async (req, res, next) => {
+  return registerWithRole(req, res, next, null);
+};
+
+// @desc    Login user
+// @route   POST /api/auth/login
+exports.login = async (req, res, next) => {
+  return loginWithRole(req, res, next, null);
+};
+
+// Dedicated role-based endpoints
+exports.registerRenter = async (req, res, next) => registerWithRole(req, res, next, 'renter');
+exports.registerLender = async (req, res, next) => registerWithRole(req, res, next, 'lender');
+exports.loginRenter = async (req, res, next) => loginWithRole(req, res, next, 'renter');
+exports.loginLender = async (req, res, next) => loginWithRole(req, res, next, 'lender');
 
 // @desc    Get user profile
 // @route   GET /api/auth/profile

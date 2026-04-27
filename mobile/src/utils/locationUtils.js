@@ -18,8 +18,23 @@ export function getDistanceKm(lat1, lon1, lat2, lon2) {
  */
 export function extractCity(locationString) {
   if (!locationString) return '';
+  if (typeof locationString === 'object') {
+    const cityCandidate =
+      locationString.city ||
+      locationString.town ||
+      locationString.village ||
+      locationString.subregion ||
+      locationString.district ||
+      locationString.region ||
+      '';
+    if (typeof cityCandidate !== 'string') return '';
+    return cityCandidate.replace(/,?\s*India$/i, '').trim();
+  }
+
+  if (typeof locationString !== 'string') return '';
+
   const parts = locationString.split(',');
-  return parts[parts.length - 1].trim().replace(/,?\s*India$/, '').trim();
+  return parts[parts.length - 1].trim().replace(/,?\s*India$/i, '').trim();
 }
 
 /**

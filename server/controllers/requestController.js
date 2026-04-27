@@ -55,6 +55,15 @@ exports.getLenderRequests = async (req, res) => {
   }
 };
 
+// @desc    Get requests based on current user role
+// @route   GET /api/requests
+exports.getRequests = async (req, res) => {
+  if (req.user.role === 'lender' || req.user.role === 'admin') {
+    return exports.getLenderRequests(req, res);
+  }
+  return exports.getMyRequests(req, res);
+};
+
 // @desc    Update request status
 // @route   PUT /api/requests/:id
 exports.updateRequestStatus = async (req, res) => {

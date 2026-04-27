@@ -44,7 +44,7 @@ const seed = async () => {
     name: 'Ravi Renter',
     email: 'ravi.renter@example.com',
     password: 'password123',
-    role: 'user',
+    role: 'renter',
     avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150',
   });
 

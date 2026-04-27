@@ -18,6 +18,7 @@ export default function ManageUsersScreen({ navigation }) {
   });
 
   const roleColors = {
+    renter: colors.primary,
     user: colors.primary,
     lender: colors.secondary,
     admin: colors.accent,
@@ -44,7 +45,7 @@ export default function ManageUsersScreen({ navigation }) {
         </View>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 10 }}>
           <View style={{ flexDirection: 'row', gap: 8 }}>
-            {['all', 'user', 'lender', 'admin'].map((r) => (
+            {['all', 'renter', 'lender', 'admin'].map((r) => (
               <TouchableOpacity
                 key={r}
                 onPress={() => setFilterRole(r)}

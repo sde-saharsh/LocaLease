@@ -1,10 +1,10 @@
 const express = require('express');
 const router = express.Router();
-const { createRequest, getMyRequests, getLenderRequests, updateRequestStatus } = require('../controllers/requestController');
+const { createRequest, getRequests, getMyRequests, getLenderRequests, updateRequestStatus } = require('../controllers/requestController');
 const { protect } = require('../middleware/authMiddleware');
 
 router.route('/')
-  .get(protect, getLenderRequests) // or getMyRequests, depending on need
+  .get(protect, getRequests)
   .post(protect, createRequest);
 
 router.get('/my', protect, getMyRequests);

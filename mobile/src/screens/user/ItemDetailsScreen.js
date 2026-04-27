@@ -1,14 +1,14 @@
 import React, { useState, useRef } from 'react';
 import {
   View, Text, ScrollView, Image, TouchableOpacity,
-  Dimensions, Animated, StyleSheet,
+  Dimensions, Animated,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp, useTheme } from '../../context/AppContext';
 import CustomButton from '../../components/CustomButton';
-import { Spacing, FontSize, BorderRadius, Shadow } from '../../constants';
+import { Spacing, BorderRadius, Shadow } from '../../constants';
+import { extractCity } from '../../utils/locationUtils';
 
 const { width } = Dimensions.get('window');
 
@@ -20,13 +20,27 @@ export default function ItemDetailsScreen({ route, navigation }) {
   const [activeSlide, setActiveSlide] = useState(0);
   const [loading, setLoading] = useState(false);
   const scrollX = useRef(new Animated.Value(0)).current;
-  const isWishlisted = wishlist.includes(item.id);
+  const itemId = item?._id || item?.id;
+  const isWishlisted = wishlist.includes(itemId);
+  const images = Array.isArray(item?.images) && item.images.length
+    ? item.images
+    : ['https://via.placeholder.com/800x600?text=No+Image'];
+  const owner = item?.owner || {};
+  const ownerName = typeof owner?.name === 'string' ? owner.name : 'Unknown Owner';
+  const ownerAvatar = owner?.avatar || 'https://via.placeholder.com/100?text=U';
+  const ownerRating = typeof owner?.rating === 'number' ? owner.rating : 0;
+  const ownerReviews = typeof owner?.reviews === 'number' ? owner.reviews : 0;
+  const displayLocation = typeof item?.location === 'string'
+    ? item.location
+    : extractCity(item?.location || item?.address || '') || 'Location not available';
+  const itemFeatures = Array.isArray(item?.features) ? item.features : [];
+  const displayDistance = typeof item?.distance === 'string' ? item.distance : 'N/A';
 
   const handleRent = async () => {
     setLoading(true);
     const result = await createRequest({
       itemId: item._id || item.id,
-      lender: item.owner._id || item.owner.id,
+        lender: owner._id || owner.id,
       startDate: '2024-05-01',
       endDate: '2024-05-03',
       totalPrice: item.price * 3,
@@ -73,7 +87,7 @@ export default function ItemDetailsScreen({ route, navigation }) {
               setActiveSlide(Math.round(e.nativeEvent.contentOffset.x / width));
             }}
           >
-            {item.images.map((img, idx) => (
+            {images.map((img, idx) => (
               <Image key={idx} source={{ uri: img }} style={{ width, height: 340 }} resizeMode="cover" />
             ))}
           </Animated.ScrollView>
@@ -105,7 +119,7 @@ export default function ItemDetailsScreen({ route, navigation }) {
                 <Ionicons name="share-outline" size={22} color="#FFF" />
               </TouchableOpacity>
               <TouchableOpacity
-                onPress={() => toggleWishlist(item.id)}
+                onPress={() => itemId && toggleWishlist(itemId)}
                 style={{
                   width: 40, height: 40, borderRadius: 20,
                   backgroundColor: 'rgba(0,0,0,0.4)',
@@ -127,7 +141,7 @@ export default function ItemDetailsScreen({ route, navigation }) {
             width: '100%', flexDirection: 'row',
             justifyContent: 'center', gap: 6,
           }}>
-            {item.images.map((_, idx) => (
+            {images.map((_, idx) => (
               <View key={idx} style={{
                 width: activeSlide === idx ? 20 : 8,
                 height: 8, borderRadius: 4,
@@ -152,7 +166,7 @@ export default function ItemDetailsScreen({ route, navigation }) {
               <Text style={{ fontSize: 24, fontWeight: '800', color: colors.textPrimary }}>{item.title}</Text>
               <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 6 }}>
                 <Ionicons name="location-outline" size={14} color={colors.textTertiary} />
-                <Text style={{ fontSize: 13, color: colors.textTertiary, marginLeft: 4 }}>{item.location}</Text>
+                <Text style={{ fontSize: 13, color: colors.textTertiary, marginLeft: 4 }}>{displayLocation}</Text>
               </View>
             </View>
             <View style={{ alignItems: 'flex-end' }}>
@@ -183,18 +197,22 @@ export default function ItemDetailsScreen({ route, navigation }) {
           </View>
 
           {/* Features */}
-          <Text style={{ fontSize: 18, fontWeight: '700', color: colors.textPrimary, marginBottom: 12 }}>Features</Text>
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 20 }}>
-            {item.features.map((feat, idx) => (
-              <View key={idx} style={{
-                paddingHorizontal: 14, paddingVertical: 8,
-                backgroundColor: colors.primary + '10',
-                borderRadius: BorderRadius.md,
-              }}>
-                <Text style={{ fontSize: 13, fontWeight: '600', color: colors.primary }}>{feat}</Text>
+          {itemFeatures.length > 0 && (
+            <>
+              <Text style={{ fontSize: 18, fontWeight: '700', color: colors.textPrimary, marginBottom: 12 }}>Features</Text>
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 20 }}>
+                {itemFeatures.map((feat, idx) => (
+                  <View key={idx} style={{
+                    paddingHorizontal: 14, paddingVertical: 8,
+                    backgroundColor: colors.primary + '10',
+                    borderRadius: BorderRadius.md,
+                  }}>
+                    <Text style={{ fontSize: 13, fontWeight: '600', color: colors.primary }}>{feat}</Text>
+                  </View>
+                ))}
               </View>
-            ))}
-          </View>
+            </>
+          )}
 
           {/* Description */}
           <Text style={{ fontSize: 18, fontWeight: '700', color: colors.textPrimary, marginBottom: 8 }}>Description</Text>
@@ -212,7 +230,7 @@ export default function ItemDetailsScreen({ route, navigation }) {
               { icon: 'shield-checkmark-outline', label: 'Security Deposit', value: `₹${item.deposit}` },
               { icon: 'time-outline', label: 'Min Rental', value: `${item.minRental} day(s)` },
               { icon: 'calendar-outline', label: 'Max Rental', value: `${item.maxRental} days` },
-              { icon: 'location-outline', label: 'Distance', value: item.distance },
+              { icon: 'location-outline', label: 'Distance', value: displayDistance },
             ].map((info, idx) => (
               <View key={idx} style={{
                 flexDirection: 'row', alignItems: 'center',
@@ -265,10 +283,10 @@ export default function ItemDetailsScreen({ route, navigation }) {
             padding: Spacing.lg, flexDirection: 'row', alignItems: 'center',
             borderWidth: 1, borderColor: colors.borderLight,
           }, Shadow.sm]}>
-            <Image source={{ uri: item.owner.avatar }} style={{ width: 56, height: 56, borderRadius: 28 }} />
+            <Image source={{ uri: ownerAvatar }} style={{ width: 56, height: 56, borderRadius: 28 }} />
             <View style={{ flex: 1, marginLeft: 16 }}>
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <Text style={{ fontSize: 17, fontWeight: '800', color: colors.textPrimary }}>{item.owner.name}</Text>
+                <Text style={{ fontSize: 17, fontWeight: '800', color: colors.textPrimary }}>{ownerName}</Text>
                 <View style={{ marginLeft: 6, backgroundColor: '#3B82F6', borderRadius: 12, padding: 2 }}>
                   <Ionicons name="checkmark-circle" size={12} color="#FFF" />
                 </View>
@@ -276,7 +294,7 @@ export default function ItemDetailsScreen({ route, navigation }) {
               <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
                 <Ionicons name="star" size={13} color={colors.accent} />
                 <Text style={{ fontSize: 13, fontWeight: '700', color: colors.textSecondary, marginLeft: 4 }}>
-                  {item.owner.rating} · {item.owner.reviews} reviews
+                  {ownerRating} · {ownerReviews} reviews
                 </Text>
               </View>
             </View>

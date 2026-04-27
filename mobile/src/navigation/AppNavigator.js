@@ -60,6 +60,9 @@ function TabIcon({ name, focused, color }) {
 
 // ─── User Tabs ───
 function UserTabs() {
+  const { role } = useApp();
+  if (role === 'lender') return <LenderTabs />;
+  if (role === 'admin') return <AdminTabs />;
   const colors = useTheme();
   return (
     <Tab.Navigator
@@ -127,6 +130,9 @@ function UserTabs() {
 
 // ─── Lender Tabs ───
 function LenderTabs() {
+  const { role } = useApp();
+  if (role === 'renter') return <UserTabs />;
+  if (role === 'admin') return <AdminTabs />;
   const colors = useTheme();
   return (
     <Tab.Navigator
@@ -203,6 +209,9 @@ function LenderTabs() {
 
 // ─── Admin Tabs ───
 function AdminTabs() {
+  const { role } = useApp();
+  if (role === 'renter') return <UserTabs />;
+  if (role === 'lender') return <LenderTabs />;
   const colors = useTheme();
   return (
     <Tab.Navigator
@@ -290,6 +299,7 @@ function AdminTabs() {
 export default function AppNavigator() {
   const { isDarkMode } = useApp();
   const colors = useTheme();
+  const linking = Platform.OS === 'web' ? { enabled: false } : undefined;
 
   const baseTheme = isDarkMode ? DarkTheme : DefaultTheme;
 
@@ -319,7 +329,7 @@ export default function AppNavigator() {
   };
 
   return (
-    <NavigationContainer theme={theme}>
+    <NavigationContainer theme={theme} linking={linking}>
       <Stack.Navigator
         screenOptions={{
           headerShown: false,

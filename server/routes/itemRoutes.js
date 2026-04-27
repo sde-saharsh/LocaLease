@@ -7,7 +7,7 @@ const upload = require('../middleware/uploadMiddleware');
 
 router.route('/')
   .get(getItems)
-  .post(protect, authorize('lender', 'admin'), createItem);
+  .post(protect, authorize('renter', 'lender', 'admin'), createItem);
 
 router.post('/upload', protect, upload.array('images', 5), (req, res) => {
   const urls = req.files.map(file => {

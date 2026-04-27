@@ -86,8 +86,12 @@ export default function UserHomeScreen({ navigation }) {
     if (locationFilter === 'city') {
       const userCity = userLocation.city;
       return list.filter((item) => {
-        const itemCity = extractCity(item.location || item.address || '');
-        return isSameCity(userCity, itemCity);
+        try {
+          const itemCity = extractCity(item.location || item.address || '');
+          return isSameCity(userCity, itemCity);
+        } catch (err) {
+          return false;
+        }
       });
     }
 

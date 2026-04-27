@@ -1,9 +1,12 @@
 import React, { createContext, useContext, useReducer, useCallback } from 'react';
+import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Location from 'expo-location';
 import { USERS, ITEMS, REQUESTS } from '../data/mockData';
 
 const AppContext = createContext();
+
+const normalizeUserRole = (role) => (role === 'user' ? 'renter' : role);
 
 const initialState = {
   user: null,
@@ -170,9 +173,24 @@ function appReducer(state, action) {
 export function AppProvider({ children }) {
   const [state, dispatch] = useReducer(appReducer, initialState);
 
-  // Production: Render backend URL
-  // For local dev, change to: 'http://localhost:5000/api'  or  'http://<your-local-ip>:5000/api'
-  const API_URL = 'https://rentalapp-backend.onrender.com/api';
+  // Resolve API URL in this order:
+  // 1) EXPO_PUBLIC_API_URL (recommended for custom setups)
+  // 2) localhost backend when running web on localhost
+  // 3) deployed fallback
+  const resolveApiUrl = () => {
+    const envUrl = process.env.EXPO_PUBLIC_API_URL;
+    if (envUrl) return envUrl;
+
+    if (Platform.OS === 'web' && typeof window !== 'undefined') {
+      const host = window.location.hostname;
+      if (host === 'localhost' || host === '127.0.0.1') {
+        return 'http://localhost:5000/api';
+      }
+    }
+
+    return 'https://rentalapp-backend.onrender.com/api';
+  };
+  const API_URL = resolveApiUrl();
 
   // Load token and user on startup
   React.useEffect(() => {
@@ -183,9 +201,10 @@ export function AppProvider({ children }) {
         
         if (storedToken && storedUser) {
           const user = JSON.parse(storedUser);
+          const normalizedUser = { ...user, role: normalizeUserRole(user?.role) };
           dispatch({ 
             type: ActionTypes.LOGIN, 
-            payload: { user, token: storedToken } 
+            payload: { user: normalizedUser, token: storedToken } 
           });
         }
       } catch (err) {
@@ -238,57 +257,68 @@ export function AppProvider({ children }) {
 
   const register = useCallback(async (userData) => {
     try {
-      const res = await fetch(`${API_URL}/auth/register`, {
+      const selectedRole = userData?.role === 'lender' ? 'lender' : 'renter';
+      const registerPath = selectedRole === 'lender' ? '/auth/lender/register' : '/auth/renter/register';
+      const res = await fetch(`${API_URL}${registerPath}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(userData),
       });
       const data = await res.json();
       if (res.ok) {
+        const normalizedUser = { ...data.user, role: normalizeUserRole(data?.user?.role) };
         await AsyncStorage.setItem('token', data.token);
-        await AsyncStorage.setItem('user', JSON.stringify(data.user));
-        dispatch({ type: ActionTypes.LOGIN, payload: { user: data.user, token: data.token } });
-        return { success: true, role: data.user.role };
+        await AsyncStorage.setItem('user', JSON.stringify(normalizedUser));
+        dispatch({ type: ActionTypes.LOGIN, payload: { user: normalizedUser, token: data.token } });
+        return { success: true, role: normalizedUser.role };
       }
       return { success: false, message: data.message };
     } catch (err) {
-      return { success: false, message: 'Registration failed' };
+      return {
+        success: false,
+        message: `Registration failed. Check backend/API URL. (${err.message})`,
+      };
     }
-  }, []);
+  }, [API_URL]);
 
-  const login = useCallback(async (email, password) => {
+  const login = useCallback(async (email, password, role = 'renter') => {
     try {
-      const res = await fetch(`${API_URL}/auth/login`, {
+      const selectedRole = role === 'lender' ? 'lender' : 'renter';
+      const loginPath = selectedRole === 'lender' ? '/auth/lender/login' : '/auth/renter/login';
+      const res = await fetch(`${API_URL}${loginPath}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
       });
       const data = await res.json();
       if (res.ok) {
+        const normalizedUser = { ...data.user, role: selectedRole };
         await AsyncStorage.setItem('token', data.token);
-        await AsyncStorage.setItem('user', JSON.stringify(data.user));
-        dispatch({ type: ActionTypes.LOGIN, payload: { user: data.user, token: data.token } });
-        return { success: true, role: data.user.role };
+        await AsyncStorage.setItem('user', JSON.stringify(normalizedUser));
+        dispatch({ type: ActionTypes.LOGIN, payload: { user: normalizedUser, token: data.token } });
+        return { success: true, role: selectedRole };
       }
       return { success: false, message: data.message };
     } catch (err) {
-      return { success: false, message: 'Server error' };
+      return {
+        success: false,
+        message: `Login failed. Check backend/API URL. (${err.message})`,
+      };
     }
-  }, []);
+  }, [API_URL]);
 
   const loginAsRole = useCallback((role) => {
     // If user is logged in, just update their active role for the UI
     if (state.user) {
-      // Security: Only allow switching to 'admin' if the user is actually an admin in DB
-      if (role === 'admin' && state.user.role !== 'admin') {
-        return { success: false, message: 'Not authorized for Admin role' };
+      // Security: prevent cross-portal switching for authenticated users
+      if (role !== state.user.role) {
+        return { success: false, message: 'Role switching is disabled for signed-in users' };
       }
-      
       dispatch({ 
         type: ActionTypes.LOGIN, 
-        payload: { user: { ...state.user, role }, token: state.token } 
+        payload: { user: { ...state.user, role: state.user.role }, token: state.token } 
       });
-      return { success: true, role };
+      return { success: true, role: state.user.role };
     }
 
     // Fallback to demo mode for guest users

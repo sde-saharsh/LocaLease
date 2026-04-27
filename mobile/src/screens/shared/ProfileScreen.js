@@ -51,10 +51,27 @@ export default function ProfileScreen({ navigation }) {
             padding: 4, backgroundColor: 'rgba(255,255,255,0.2)',
             marginBottom: 16,
           }}>
-            <Image
-              source={{ uri: user?.avatar || 'https://cdn-icons-png.flaticon.com/512/149/149071.png' }}
-              style={{ width: '100%', height: '100%', borderRadius: 55, borderWidth: 3, borderColor: '#FFF' }}
-            />
+            {user?.avatar ? (
+              <Image
+                source={{ uri: user.avatar }}
+                style={{ width: '100%', height: '100%', borderRadius: 55, borderWidth: 3, borderColor: '#FFF' }}
+              />
+            ) : (
+              <View
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  borderRadius: 55,
+                  borderWidth: 3,
+                  borderColor: '#FFF',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  backgroundColor: 'rgba(255,255,255,0.12)',
+                }}
+              >
+                <Ionicons name="person" size={42} color="#FFF" />
+              </View>
+            )}
           </View>
           <Text style={{ fontSize: 26, fontWeight: '900', color: '#FFF' }}>{user?.name || 'User'}</Text>
           <Text style={{ fontSize: 15, color: 'rgba(255,255,255,0.7)', marginTop: 4 }}>{user?.email}</Text>
@@ -136,31 +153,35 @@ export default function ProfileScreen({ navigation }) {
             />
           </View>
 
-          <Text style={{ fontSize: 18, fontWeight: '800', color: colors.textPrimary, marginTop: 32, marginBottom: 16 }}>Switch Role (Demo Mode)</Text>
-          <View style={{ flexDirection: 'row', gap: 12, marginBottom: 8 }}>
-            {[
-              { id: 'user', icon: 'person', label: 'Renter' },
-              { id: 'lender', icon: 'storefront', label: 'Lender' },
-              { id: 'admin', icon: 'shield', label: 'Admin' }
-            ].filter(r => r.id !== 'admin' || user?.role === 'admin').map((r) => (
-              <TouchableOpacity
-                key={r.id}
-                onPress={() => {
-                  loginAsRole(r.id);
-                  navigation.reset({ index: 0, routes: [{ name: r.id === 'user' ? 'UserTabs' : r.id === 'lender' ? 'LenderTabs' : 'AdminTabs' }] });
-                }}
-                style={{
-                  flex: 1, backgroundColor: role === r.id ? colors.primary : colors.card,
-                  borderRadius: 16, padding: 12, alignItems: 'center', justifyContent: 'center',
-                  borderWidth: 1, borderColor: role === r.id ? colors.primary : colors.borderLight,
-                  ...Shadow.sm
-                }}
-              >
-                <Ionicons name={r.icon} size={20} color={role === r.id ? '#FFF' : colors.textSecondary} />
-                <Text style={{ fontSize: 11, fontWeight: '800', color: role === r.id ? '#FFF' : colors.textSecondary, marginTop: 6, textTransform: 'uppercase' }}>{r.label}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
+          {user?.role === 'admin' && (
+            <>
+              <Text style={{ fontSize: 18, fontWeight: '800', color: colors.textPrimary, marginTop: 32, marginBottom: 16 }}>Switch Role (Admin Only)</Text>
+              <View style={{ flexDirection: 'row', gap: 12, marginBottom: 8 }}>
+                {[
+                  { id: 'renter', icon: 'person', label: 'Renter' },
+                  { id: 'lender', icon: 'storefront', label: 'Lender' },
+                  { id: 'admin', icon: 'shield', label: 'Admin' }
+                ].map((r) => (
+                  <TouchableOpacity
+                    key={r.id}
+                    onPress={() => {
+                      loginAsRole(r.id);
+                      navigation.reset({ index: 0, routes: [{ name: r.id === 'renter' ? 'UserTabs' : r.id === 'lender' ? 'LenderTabs' : 'AdminTabs' }] });
+                    }}
+                    style={{
+                      flex: 1, backgroundColor: role === r.id ? colors.primary : colors.card,
+                      borderRadius: 16, padding: 12, alignItems: 'center', justifyContent: 'center',
+                      borderWidth: 1, borderColor: role === r.id ? colors.primary : colors.borderLight,
+                      ...Shadow.sm
+                    }}
+                  >
+                    <Ionicons name={r.icon} size={20} color={role === r.id ? '#FFF' : colors.textSecondary} />
+                    <Text style={{ fontSize: 11, fontWeight: '800', color: role === r.id ? '#FFF' : colors.textSecondary, marginTop: 6, textTransform: 'uppercase' }}>{r.label}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </>
+          )}
 
           <Text style={{ fontSize: 18, fontWeight: '800', color: colors.textPrimary, marginTop: 32, marginBottom: 16 }}>Account Settings</Text>
           <View style={[{

@@ -13,21 +13,20 @@ import { Spacing, FontSize, FontWeight, BorderRadius } from '../../constants';
 
 export default function LoginScreen({ navigation }) {
   const colors = useTheme();
-  const { login, loginAsRole } = useApp();
-  const [role, setRole] = useState('user'); // 'user' or 'lender'
+  const { login } = useApp();
+  const [role, setRole] = useState('renter'); // 'renter' or 'lender'
 
-  const [email, setEmail] = useState('saharsh@example.com');
-  const [password, setPassword] = useState('password123');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
 
   const handleLogin = async () => {
     setLoading(true);
-    const result = await login(email, password);
+    const result = await login(email, password, role);
     setLoading(false);
     if (result.success) {
-      // If user logs in as lender but chose user portal, we should warn or redirect
-      navigateByRole(result.role);
+      navigateByRole(role);
     } else {
       setErrors({ server: result.message });
     }
@@ -62,11 +61,11 @@ export default function LoginScreen({ navigation }) {
 
       <View style={styles.portalToggleContainer}>
         <TouchableOpacity 
-          onPress={() => setRole('user')}
-          style={[styles.portalToggle, role === 'user' && { backgroundColor: colors.primary }]}
+          onPress={() => setRole('renter')}
+          style={[styles.portalToggle, role === 'renter' && { backgroundColor: colors.primary }]}
         >
-          <Ionicons name="person-outline" size={18} color={role === 'user' ? '#FFF' : colors.textSecondary} />
-          <Text style={[styles.portalToggleText, { color: role === 'user' ? '#FFF' : colors.textSecondary }]}>Renter Portal</Text>
+          <Ionicons name="person-outline" size={18} color={role === 'renter' ? '#FFF' : colors.textSecondary} />
+          <Text style={[styles.portalToggleText, { color: role === 'renter' ? '#FFF' : colors.textSecondary }]}>Renter Portal</Text>
         </TouchableOpacity>
         <TouchableOpacity 
           onPress={() => setRole('lender')}
@@ -118,11 +117,11 @@ export default function LoginScreen({ navigation }) {
             </TouchableOpacity>
 
             <CustomButton
-              title={`Sign In to ${role === 'user' ? 'Renter' : 'Lender'} Portal`}
+              title={`Sign In to ${role === 'renter' ? 'Renter' : 'Lender'} Portal`}
               onPress={handleLogin}
               loading={loading}
               icon="log-in-outline"
-              color={role === 'user' ? colors.primary : colors.secondary}
+              color={role === 'renter' ? colors.primary : colors.secondary}
               size="lg"
             />
 

@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, ScrollView } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 import { useApp, useTheme } from '../../context/AppContext';
 import { RequestCard } from '../../components/RequestCard';
 import Header from '../../components/Header';

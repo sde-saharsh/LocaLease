@@ -8,12 +8,12 @@ const itemSchema = new mongoose.Schema({
   category: { 
     type: String, 
     required: true,
-    enum: ['Electronics', 'Furniture', 'Tools', 'Vehicles', 'Fashion', 'Others']
+    enum: ['Electronics', 'Furniture', 'Tools', 'Vehicles', 'Fashion', 'Others', 'Sports', 'Cameras', 'Music', 'Outdoors', 'Gaming']
   },
   condition: { 
     type: String, 
     required: true,
-    enum: ['New', 'Like New', 'Good', 'Fair']
+    enum: ['New', 'Like New', 'Excellent', 'Good', 'Fair']
   },
   address: { type: String, required: true },
   location: {
