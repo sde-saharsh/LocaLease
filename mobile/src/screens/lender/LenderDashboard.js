@@ -37,8 +37,8 @@ export default function LenderDashboard({ navigation }) {
 
   const quickActions = [
     { icon: 'add-circle', label: 'Add Item', screen: 'AddItem', color: '#4F46E5' },
-    { icon: 'list', label: 'My Listings', screen: 'MyListings', color: '#6366F1' },
-    { icon: 'mail', label: 'Requests', screen: 'LenderRequests', color: '#F59E0B' },
+    { icon: 'list', label: 'My Listings', screen: 'Listings', color: '#6366F1' },
+    { icon: 'mail', label: 'Requests', screen: 'Requests', color: '#F59E0B' },
     { icon: 'person', label: 'Profile', screen: 'Profile', color: '#10B981' },
   ];
 
@@ -143,7 +143,7 @@ export default function LenderDashboard({ navigation }) {
         {/* Recent Requests */}
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
           <Text style={{ fontSize: 20, fontWeight: '800', color: colors.textPrimary }}>Recent Requests</Text>
-          <TouchableOpacity onPress={() => navigation.navigate('LenderRequests')}>
+          <TouchableOpacity onPress={() => navigation.navigate('Requests')}>
             <Text style={{ fontSize: 14, color: colors.primary, fontWeight: '700' }}>See All</Text>
           </TouchableOpacity>
         </View>

@@ -61,6 +61,7 @@ function appReducer(state, action) {
         ...state,
         user: null,
         role: null,
+        token: null,
         isAuthenticated: false,
       };
     case ActionTypes.TOGGLE_DARK_MODE:
@@ -172,6 +173,11 @@ function appReducer(state, action) {
 
 export function AppProvider({ children }) {
   const [state, dispatch] = useReducer(appReducer, initialState);
+  const forceLogout = useCallback(async () => {
+    await AsyncStorage.removeItem('token');
+    await AsyncStorage.removeItem('user');
+    dispatch({ type: ActionTypes.LOGOUT });
+  }, []);
 
   // Resolve API URL in this order:
   // 1) EXPO_PUBLIC_API_URL (recommended for custom setups)
@@ -235,12 +241,18 @@ export function AppProvider({ children }) {
         }
       });
       const data = await res.json();
-      if (res.ok) dispatch({ type: ActionTypes.SET_REQUESTS, payload: data });
+      if (res.ok) {
+        dispatch({ type: ActionTypes.SET_REQUESTS, payload: data });
+        return;
+      }
+      if (res.status === 401) {
+        await forceLogout();
+      }
     } catch (err) {
       console.error('Fetch requests error:', err);
       dispatch({ type: ActionTypes.SET_REQUESTS, payload: REQUESTS });
     }
-  }, [state.token]);
+  }, [state.token, forceLogout]);
 
   React.useEffect(() => {
     fetchItems();
@@ -273,22 +285,22 @@ export function AppProvider({ children }) {
     }
   }, [API_URL]);
 
-  const login = useCallback(async (email, password, role = 'renter') => {
+  const login = useCallback(async (email, password) => {
     try {
-      const selectedRole = role === 'lender' ? 'lender' : 'renter';
-      const loginPath = selectedRole === 'lender' ? '/auth/lender/login' : '/auth/renter/login';
-      const res = await fetch(`${API_URL}${loginPath}`, {
+      // Always login through the non-role-restricted endpoint.
+      // The backend returns the actual user.role; we should trust it to avoid 403s when users pick the wrong portal.
+      const res = await fetch(`${API_URL}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
       });
       const data = await res.json();
       if (res.ok) {
-        const normalizedUser = { ...data.user, role: selectedRole };
+        const normalizedUser = { ...data.user, role: normalizeUserRole(data?.user?.role) };
         await AsyncStorage.setItem('token', data.token);
         await AsyncStorage.setItem('user', JSON.stringify(normalizedUser));
         dispatch({ type: ActionTypes.LOGIN, payload: { user: normalizedUser, token: data.token } });
-        return { success: true, role: selectedRole };
+        return { success: true, role: normalizedUser.role };
       }
       return { success: false, message: data.message };
     } catch (err) {
@@ -323,10 +335,8 @@ export function AppProvider({ children }) {
   }, [state.user, state.token]);
 
   const logout = useCallback(async () => {
-    await AsyncStorage.removeItem('token');
-    await AsyncStorage.removeItem('user');
-    dispatch({ type: ActionTypes.LOGOUT });
-  }, []);
+    await forceLogout();
+  }, [forceLogout]);
 
   // ─── Location ────────────────────────────────────────────────────────────────
 
@@ -395,11 +405,14 @@ export function AppProvider({ children }) {
         dispatch({ type: ActionTypes.UPDATE_REQUEST_STATUS, payload: { id, status } });
         return { success: true };
       }
+      if (res.status === 401) {
+        await forceLogout();
+      }
       return { success: false, message: data.message };
     } catch (err) {
       return { success: false, message: 'Failed to update request' };
     }
-  }, [state.token]);
+  }, [state.token, forceLogout]);
 
   const createRequest = useCallback(async (requestData) => {
     try {
@@ -416,11 +429,14 @@ export function AppProvider({ children }) {
         dispatch({ type: ActionTypes.CREATE_REQUEST, payload: data });
         return { success: true };
       }
+      if (res.status === 401) {
+        await forceLogout();
+      }
       return { success: false, message: data.message };
     } catch (err) {
       return { success: false, message: 'Failed to create request' };
     }
-  }, [state.token]);
+  }, [state.token, forceLogout]);
 
   const updateProfile = useCallback((updates) => {
     dispatch({ type: ActionTypes.UPDATE_PROFILE, payload: updates });
@@ -441,11 +457,14 @@ export function AppProvider({ children }) {
         dispatch({ type: ActionTypes.ADD_ITEM, payload: data });
         return { success: true };
       }
-      return { success: false, message: data.message };
+      if (res.status === 401) {
+        await forceLogout();
+      }
+      return { success: false, status: res.status, message: data.message };
     } catch (err) {
       return { success: false, message: 'Failed to list item' };
     }
-  }, [state.token]);
+  }, [state.token, forceLogout]);
 
   const value = {
     ...state,

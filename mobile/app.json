@@ -25,7 +25,12 @@
         "backgroundColor": "#4F46E5"
       },
       "package": "com.localease.app",
-      "permissions": ["ACCESS_FINE_LOCATION", "ACCESS_COARSE_LOCATION"]
+      "permissions": [
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -38,6 +43,11 @@
           "locationWhenInUsePermission": "LocaLease needs your location to find rentals near you."
         }
       ]
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "630e16d4-2a2a-4bd7-8a57-081d5cceeacf"
+      }
+    }
   }
 }

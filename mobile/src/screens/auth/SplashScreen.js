@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { View, Text, Animated, StyleSheet, Dimensions } from 'react-native';
+import { View, Text, Animated, StyleSheet, Dimensions, Platform } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
@@ -9,6 +9,7 @@ const { width, height } = Dimensions.get('window');
 
 export default function SplashScreen({ navigation }) {
   const { isAuthenticated, role } = useApp();
+  const useNativeDriver = Platform.OS !== 'web';
   const logoScale = useRef(new Animated.Value(0.3)).current;
   const logoOpacity = useRef(new Animated.Value(0)).current;
   const textTranslate = useRef(new Animated.Value(30)).current;
@@ -22,30 +23,30 @@ export default function SplashScreen({ navigation }) {
           toValue: 1,
           tension: 50,
           friction: 7,
-          useNativeDriver: true,
+          useNativeDriver,
         }),
         Animated.timing(logoOpacity, {
           toValue: 1,
           duration: 600,
-          useNativeDriver: true,
+          useNativeDriver,
         }),
       ]),
       Animated.parallel([
         Animated.timing(textTranslate, {
           toValue: 0,
           duration: 500,
-          useNativeDriver: true,
+          useNativeDriver,
         }),
         Animated.timing(textOpacity, {
           toValue: 1,
           duration: 500,
-          useNativeDriver: true,
+          useNativeDriver,
         }),
       ]),
       Animated.timing(subtitleOpacity, {
         toValue: 1,
         duration: 400,
-        useNativeDriver: true,
+        useNativeDriver,
       }),
     ]).start();
 
@@ -106,14 +107,15 @@ export default function SplashScreen({ navigation }) {
 }
 
 function LoadingDot({ delay }) {
+  const useNativeDriver = Platform.OS !== 'web';
   const opacity = useRef(new Animated.Value(0.3)).current;
 
   useEffect(() => {
     const timer = setTimeout(() => {
       Animated.loop(
         Animated.sequence([
-          Animated.timing(opacity, { toValue: 1, duration: 500, useNativeDriver: true }),
-          Animated.timing(opacity, { toValue: 0.3, duration: 500, useNativeDriver: true }),
+          Animated.timing(opacity, { toValue: 1, duration: 500, useNativeDriver }),
+          Animated.timing(opacity, { toValue: 0.3, duration: 500, useNativeDriver }),
         ])
       ).start();
     }, delay);
