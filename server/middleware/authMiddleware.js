@@ -24,8 +24,9 @@ exports.protect = async (req, res, next) => {
         return next();
       }
 
-      // Verify token
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      // Verify token — fall back to local dev secret if env var wasn't set on Render
+      const jwtSecret = process.env.JWT_SECRET || 'your_super_secret_jwt_key_12345';
+      const decoded = jwt.verify(token, jwtSecret);
 
       // Get user from token
       req.user = await User.findById(decoded.id).select('-password');

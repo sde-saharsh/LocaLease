@@ -56,6 +56,10 @@ export default function AddItemScreen({ navigation }) {
   };
 
   const uploadImages = async () => {
+    if (!token) {
+      return { urls: [], unauthorized: true, message: 'Session expired. Please login again.' };
+    }
+
     const formData = new FormData();
     for (let i = 0; i < images.length; i++) {
       const uri = images[i];
@@ -91,26 +95,54 @@ export default function AddItemScreen({ navigation }) {
         body: formData,
       });
       const data = await res.json();
-      return data.urls || [];
+
+      if (res.status === 401) {
+        return {
+          urls: [],
+          unauthorized: true,
+          message: data?.message || 'Session expired. Please login again.',
+        };
+      }
+
+      if (!res.ok) {
+        return {
+          urls: [],
+          unauthorized: false,
+          message: data?.message || 'Could not upload images',
+        };
+      }
+
+      return { urls: data.urls || [], unauthorized: false, message: null };
     } catch (err) {
       console.error('Upload error:', err);
-      return [];
+      return { urls: [], unauthorized: false, message: 'Upload failed. Please try again.' };
     }
   };
 
   const handleSubmit = async () => {
     if (!validate()) return;
-    if (images.length === 0) {
-      Alert.alert('Photos Required', 'Please add at least one photo of your item.');
+
+    if (!token) {
+      Alert.alert('Login Required', 'Please login again to list your item.', [
+        { text: 'OK', onPress: () => navigation.navigate('Login') },
+      ]);
       return;
     }
 
     setLoading(true);
-    const uploadedUrls = await uploadImages();
+    const uploadResult = images.length > 0 ? await uploadImages() : { urls: [], unauthorized: false, message: null };
     
-    if (uploadedUrls.length === 0 && images.length > 0) {
+    if (uploadResult.unauthorized) {
       setLoading(false);
-      Alert.alert('Upload Failed', 'Could not upload images. Please try again.');
+      Alert.alert('Session Expired', uploadResult.message || 'Please login again.', [
+        { text: 'OK', onPress: () => navigation.navigate('Login') },
+      ]);
+      return;
+    }
+
+    if (uploadResult.urls.length === 0 && images.length > 0) {
+      setLoading(false);
+      Alert.alert('Upload Failed', uploadResult.message || 'Could not upload images. Please try again.');
       return;
     }
 
@@ -126,7 +158,7 @@ export default function AddItemScreen({ navigation }) {
       deposit: Number(deposit) || Number(price) * 5,
       minRental: 1,
       maxRental: 30,
-      images: uploadedUrls,
+      images: uploadResult.urls,
       features: ['Quality Assured', 'Verified'],
     });
 
@@ -141,6 +173,12 @@ export default function AddItemScreen({ navigation }) {
         ]);
       }
     } else {
+      if (result.status === 401) {
+        Alert.alert('Session Expired', result.message || 'Please login again.', [
+          { text: 'OK', onPress: () => navigation.navigate('Login') },
+        ]);
+        return;
+      }
       Alert.alert('Error', result.message);
     }
   };
