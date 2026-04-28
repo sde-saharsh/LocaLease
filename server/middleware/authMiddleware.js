@@ -1,6 +1,10 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 
+const JWT_SECRET =
+  (process.env.JWT_SECRET && process.env.JWT_SECRET.trim()) ||
+  'dev_fallback_jwt_secret_change_me';
+
 exports.protect = async (req, res, next) => {
   let token;
 
@@ -24,12 +28,14 @@ exports.protect = async (req, res, next) => {
         return next();
       }
 
-      // Verify token — fall back to local dev secret if env var wasn't set on Render
-      const jwtSecret = process.env.JWT_SECRET || 'your_super_secret_jwt_key_12345';
-      const decoded = jwt.verify(token, jwtSecret);
+      // Verify token using the same secret source as auth token generation
+      const decoded = jwt.verify(token, JWT_SECRET);
 
       // Get user from token
       req.user = await User.findById(decoded.id).select('-password');
+      if (!req.user) {
+        return res.status(401).json({ message: 'Not authorized, user not found' });
+      }
 
       next();
     } catch (error) {
