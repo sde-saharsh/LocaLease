@@ -3,23 +3,24 @@ import { View, Text, Image, TouchableOpacity, StyleSheet, Dimensions } from 'rea
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme, useApp } from '../context/AppContext';
 import { BorderRadius, FontSize, FontWeight, Spacing, Shadow } from '../constants';
+import { resolveImageUri } from '../utils/imageUtils';
 
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = (width - Spacing.lg * 3) / 2;
 
 export function ItemCard({ item, onPress, compact = false }) {
   const colors = useTheme();
-  const { wishlist, toggleWishlist } = useApp();
+  const { wishlist, toggleWishlist, API_URL } = useApp();
   const itemId = item?._id || item?.id;
   const handleToggleWishlist = () => {
     if (!itemId) return;
     toggleWishlist(itemId);
   };
   const isWishlisted = wishlist.includes(itemId);
-  const coverImage = item?.images?.[0] || 'https://via.placeholder.com/600x400?text=No+Image';
+  const coverImage = resolveImageUri(item?.images?.[0], API_URL);
   const owner = item?.owner || {};
   const ownerName = typeof owner?.name === 'string' ? owner.name : 'Owner';
-  const ownerAvatar = owner?.avatar || 'https://via.placeholder.com/100?text=U';
+  const ownerAvatar = resolveImageUri(owner?.avatar, API_URL);
 
   const Badge = ({ text, color = colors.primary, style }) => (
     <View style={[{

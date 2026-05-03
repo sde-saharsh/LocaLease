@@ -42,7 +42,7 @@ export default function RequestStatusScreen({ navigation }) {
                 {status} ({reqs.length})
               </Text>
               {reqs.map((req) => (
-                <RequestCard key={req.id} request={req} />
+                <RequestCard key={req._id || req.id} request={req} />
               ))}
             </View>
           );
@@ -54,6 +54,14 @@ export default function RequestStatusScreen({ navigation }) {
             <Text style={{ fontSize: 13, color: colors.textTertiary, marginTop: 4 }}>
               Start renting items to see your requests here
             </Text>
+            <View style={{ marginTop: 16 }}>
+              <Text
+                onPress={() => navigation.navigate('Explore')}
+                style={{ fontSize: 14, fontWeight: '700', color: colors.primary }}
+              >
+                Browse Items
+              </Text>
+            </View>
           </View>
         )}
       </ScrollView>

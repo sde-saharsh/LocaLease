@@ -5,13 +5,14 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp, useTheme } from '../../context/AppContext';
 import { Spacing, BorderRadius, Shadow } from '../../constants';
+import { resolveImageUri } from '../../utils/imageUtils';
 
 const { width } = Dimensions.get('window');
 
 export default function LenderDashboard({ navigation }) {
   const colors = useTheme();
   const insets = useSafeAreaInsets();
-  const { user, items, requests } = useApp();
+  const { user, items, requests, API_URL } = useApp();
 
   const myItems = items.filter((i) => {
     const ownerId = i.owner?._id || i.owner?.id || i.owner;
@@ -72,7 +73,7 @@ export default function LenderDashboard({ navigation }) {
             }}
           >
              <Image 
-              source={{ uri: user?.avatar || 'https://cdn-icons-png.flaticon.com/512/149/149071.png' }} 
+              source={{ uri: resolveImageUri(user?.avatar, API_URL) }} 
               style={{ width: '100%', height: '100%', borderRadius: 25 }} 
             />
           </TouchableOpacity>
@@ -171,12 +172,12 @@ export default function LenderDashboard({ navigation }) {
               }, Shadow.sm]}
             >
               <View style={{ position: 'relative' }}>
-                <Image source={{ uri: req.item?.images?.[0] || 'https://images.unsplash.com/photo-1518611012118-fd5e0b33a7c5?w=200' }} style={{ width: 64, height: 64, borderRadius: 16 }} />
+                <Image source={{ uri: resolveImageUri(req.item?.images?.[0], API_URL) }} style={{ width: 64, height: 64, borderRadius: 16 }} />
                 <View style={{ 
                   position: 'absolute', bottom: -4, right: -4, 
                   backgroundColor: '#FFF', padding: 2, borderRadius: 10 
                 }}>
-                  <Image source={{ uri: req.renter?.avatar || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100' }} style={{ width: 20, height: 20, borderRadius: 10 }} />
+                  <Image source={{ uri: resolveImageUri(req.renter?.avatar, API_URL) }} style={{ width: 20, height: 20, borderRadius: 10 }} />
                 </View>
               </View>
               <View style={{ flex: 1, marginLeft: 20 }}>

@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, ScrollView, Dimensions, TouchableOpacity } from 'react-native';
+import { View, Text, ScrollView, Dimensions, TouchableOpacity, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -9,7 +9,7 @@ import { Spacing, BorderRadius, Shadow } from '../../constants';
 
 const { width } = Dimensions.get('window');
 
-export default function AdminDashboard() {
+export default function AdminDashboard({ navigation }) {
   const colors = useTheme();
   const insets = useSafeAreaInsets();
   const stats = ADMIN_STATS;
@@ -21,7 +21,12 @@ export default function AdminDashboard() {
     { title: 'Revenue', value: `₹${(stats.totalRevenue / 1000).toFixed(0)}K`, icon: 'wallet', color: '#F59E0B', trend: 'up', trendVal: `+${stats.monthlyGrowth}%` },
   ];
 
-  const maxRevenue = Math.max(...stats.revenueData.map(d => d.value));
+  const quickActions = [
+    { label: 'Manage Users', icon: 'people', color: '#3B82F6', target: 'Users' },
+    { label: 'Manage Listings', icon: 'list', color: '#10B981', target: 'Listings' },
+    { label: 'Reports', icon: 'warning', color: '#F59E0B', target: 'Reports' },
+    { label: 'Admin Profile', icon: 'person', color: '#F43F5E', target: 'Profile' },
+  ];
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
@@ -45,12 +50,15 @@ export default function AdminDashboard() {
             </View>
             <Text style={{ fontSize: 32, fontWeight: '900', color: '#FFF', letterSpacing: -0.5 }}>Command Center</Text>
           </View>
-          <TouchableOpacity style={{
+          <TouchableOpacity
+            onPress={() => navigation.navigate('Reports')}
+            style={{
             width: 54, height: 54, borderRadius: 18,
             backgroundColor: 'rgba(255,255,255,0.1)',
             alignItems: 'center', justifyContent: 'center',
             borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)',
-          }}>
+          }}
+          >
             <Ionicons name="notifications-outline" size={26} color="#FFF" />
             <View style={{ position: 'absolute', top: 12, right: 12, width: 12, height: 12, borderRadius: 6, backgroundColor: colors.error, borderWidth: 2, borderColor: '#1E293B' }} />
           </TouchableOpacity>
@@ -58,13 +66,17 @@ export default function AdminDashboard() {
 
         {/* Quick Actions Bar */}
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 30 }}>
-          {[
-            { label: 'Broadcast', icon: 'megaphone', color: '#F43F5E' },
-            { label: 'Export Data', icon: 'download', color: '#3B82F6' },
-            { label: 'Server Logs', icon: 'terminal', color: '#10B981' },
-            { label: 'Backup', icon: 'cloud-upload', color: '#F59E0B' },
-          ].map((action, i) => (
-            <TouchableOpacity key={i} style={{ 
+          {quickActions.map((action, i) => (
+            <TouchableOpacity
+              key={i}
+              onPress={() => {
+                if (action.target) {
+                  navigation.navigate(action.target);
+                  return;
+                }
+                Alert.alert('Coming soon', `${action.label} will be available in a future update.`);
+              }}
+              style={{ 
               backgroundColor: 'rgba(255,255,255,0.08)', paddingHorizontal: 20, paddingVertical: 12, 
               borderRadius: 16, marginRight: 12, flexDirection: 'row', alignItems: 'center',
               borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)'

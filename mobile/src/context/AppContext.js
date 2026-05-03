@@ -16,7 +16,7 @@ const initialState = {
   isDarkMode: false,
   items: [],
   requests: [],
-  users: [],
+  users: USERS,
   wishlist: [],
   searchQuery: '',
   selectedCategory: null,
@@ -314,15 +314,18 @@ export function AppProvider({ children }) {
   const loginAsRole = useCallback((role) => {
     // If user is logged in, just update their active role for the UI
     if (state.user) {
-      // Security: prevent cross-portal switching for authenticated users
-      if (role !== state.user.role) {
+      // Security: only admin users can switch across portals.
+      if (state.user.role !== 'admin' && role !== state.user.role) {
         return { success: false, message: 'Role switching is disabled for signed-in users' };
       }
       dispatch({ 
         type: ActionTypes.LOGIN, 
-        payload: { user: { ...state.user, role: state.user.role }, token: state.token } 
+        payload: {
+          user: { ...state.user, role: state.user.role === 'admin' ? role : state.user.role },
+          token: state.token,
+        } 
       });
-      return { success: true, role: state.user.role };
+      return { success: true, role: state.user.role === 'admin' ? role : state.user.role };
     }
 
     // Fallback to demo mode for guest users

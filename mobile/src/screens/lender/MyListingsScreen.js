@@ -5,11 +5,12 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp, useTheme } from '../../context/AppContext';
 import { Spacing, BorderRadius, Shadow } from '../../constants';
+import { resolveImageUri } from '../../utils/imageUtils';
 
 export default function MyListingsScreen({ navigation }) {
   const colors = useTheme();
   const insets = useSafeAreaInsets();
-  const { items, user } = useApp();
+  const { items, user, API_URL } = useApp();
   const myItems = items.filter((i) => {
     const ownerId = i.owner?._id || i.owner?.id;
     const currentUserId = user?._id || user?.id;
@@ -67,7 +68,7 @@ export default function MyListingsScreen({ navigation }) {
               borderColor: colors.borderLight,
             }, Shadow.sm]}
           >
-            <Image source={{ uri: item.images[0] }} style={{ width: 110, height: 110 }} />
+            <Image source={{ uri: resolveImageUri(item.images[0], API_URL) }} style={{ width: 110, height: 110 }} />
             <View style={{ flex: 1, padding: 16, justifyContent: 'center' }}>
               <Text style={{ fontSize: 17, fontWeight: '800', color: colors.textPrimary }} numberOfLines={1}>
                 {item.title}

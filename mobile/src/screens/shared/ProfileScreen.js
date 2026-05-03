@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, ScrollView, Image, TouchableOpacity, Switch } from 'react-native';
+import { View, Text, ScrollView, Image, TouchableOpacity, Switch, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -14,6 +14,10 @@ export default function ProfileScreen({ navigation }) {
   const handleLogout = () => {
     logout();
     navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
+  };
+
+  const handleMenuAction = (label) => {
+    Alert.alert(label, `${label} screen is coming soon.`);
   };
 
   const menuItems = [
@@ -192,6 +196,7 @@ export default function ProfileScreen({ navigation }) {
             {menuItems.map((item, idx) => (
               <TouchableOpacity
                 key={idx}
+                onPress={() => handleMenuAction(item.label)}
                 activeOpacity={0.7}
                 style={{
                   flexDirection: 'row', alignItems: 'center',

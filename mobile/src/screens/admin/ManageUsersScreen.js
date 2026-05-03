@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, Image, TouchableOpacity, TextInput } from 'react-native';
+import { View, Text, ScrollView, Image, TouchableOpacity, TextInput, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useApp, useTheme } from '../../context/AppContext';
 import Header from '../../components/Header';
@@ -72,7 +72,7 @@ export default function ManageUsersScreen({ navigation }) {
         contentContainerStyle={{ paddingHorizontal: Spacing.xl, paddingBottom: 100 }}
       >
         {filtered.map((u) => (
-          <View key={u.id} style={[{
+          <View key={u._id || u.id || u.email} style={[{
             backgroundColor: colors.card,
             borderRadius: BorderRadius.lg,
             padding: Spacing.lg,
@@ -80,7 +80,7 @@ export default function ManageUsersScreen({ navigation }) {
             flexDirection: 'row',
             alignItems: 'center',
           }, Shadow.sm]}>
-            <Image source={{ uri: u.avatar }} style={{ width: 48, height: 48, borderRadius: 24 }} />
+            <Image source={{ uri: u.avatar || 'https://cdn-icons-png.flaticon.com/512/149/149071.png' }} style={{ width: 48, height: 48, borderRadius: 24 }} />
             <View style={{ flex: 1, marginLeft: 14 }}>
               <Text style={{ fontSize: 15, fontWeight: '700', color: colors.textPrimary }}>{u.name}</Text>
               <Text style={{ fontSize: 12, color: colors.textSecondary, marginTop: 2 }}>{u.email}</Text>
@@ -101,11 +101,17 @@ export default function ManageUsersScreen({ navigation }) {
                 </View>
               </View>
             </View>
-            <TouchableOpacity style={{
+            <TouchableOpacity
+              onPress={() => Alert.alert(
+                u.name,
+                `Email: ${u.email}\nRole: ${u.role}\nRating: ${u.rating ?? 'N/A'}`
+              )}
+              style={{
               width: 36, height: 36, borderRadius: 12,
               backgroundColor: colors.inputBackground,
               alignItems: 'center', justifyContent: 'center',
-            }}>
+            }}
+            >
               <Ionicons name="ellipsis-vertical" size={18} color={colors.textSecondary} />
             </TouchableOpacity>
           </View>

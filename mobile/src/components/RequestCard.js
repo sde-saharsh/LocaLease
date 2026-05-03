@@ -1,14 +1,16 @@
 import React from 'react';
 import { View, Text, Image, TouchableOpacity, Dimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useTheme } from '../context/AppContext';
+import { useTheme, useApp } from '../context/AppContext';
 import { BorderRadius, FontSize, FontWeight, Spacing, Shadow } from '../constants';
+import { resolveImageUri } from '../utils/imageUtils';
 
 const { width } = Dimensions.get('window');
 
 export function RequestCard({ request, onAccept, onReject, showActions = false }) {
   const colors = useTheme();
-
+  const { API_URL } = useApp();
+  
   const getStatusInfo = (status) => {
     switch (status) {
       case 'pending': return { color: colors.warning, icon: 'time', label: 'Pending' };
@@ -31,7 +33,7 @@ export function RequestCard({ request, onAccept, onReject, showActions = false }
       borderColor: colors.borderLight,
     }, Shadow.sm]}>
       <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-        <Image source={{ uri: request.item?.images?.[0] || 'https://images.unsplash.com/photo-1518611012118-fd5e0b33a7c5?w=200' }} style={{ width: 70, height: 70, borderRadius: 16 }} />
+        <Image source={{ uri: resolveImageUri(request.item?.images?.[0], API_URL) }} style={{ width: 70, height: 70, borderRadius: 16 }} />
         <View style={{ flex: 1, marginLeft: 16 }}>
           <Text style={{ fontSize: 17, fontWeight: '800', color: colors.textPrimary, marginBottom: 4 }} numberOfLines={1}>
             {request.item?.title || 'Rental Item'}

@@ -12,6 +12,7 @@ import { ItemCard } from '../../components/Cards';
 import { CATEGORIES } from '../../data/mockData';
 import { Spacing, FontSize, BorderRadius, Shadow } from '../../constants';
 import { getDistanceKm, extractCity, isSameCity } from '../../utils/locationUtils';
+import { resolveImageUri } from '../../utils/imageUtils';
 
 const { width } = Dimensions.get('window');
 
@@ -27,7 +28,7 @@ export default function UserHomeScreen({ navigation }) {
   const {
     items, searchQuery, setSearchQuery, selectedCategory, setCategory, user,
     userLocation, locationFilter, locationLoading,
-    requestUserLocation, setLocationFilter,
+    requestUserLocation, setLocationFilter, API_URL
   } = useApp();
 
   const [viewMode, setViewMode] = useState('grid');
@@ -148,7 +149,7 @@ export default function UserHomeScreen({ navigation }) {
             }}
           >
             {user?.avatar ? (
-              <Image source={{ uri: user.avatar }} style={{ width: '100%', height: '100%', borderRadius: 27 }} />
+              <Image source={{ uri: resolveImageUri(user.avatar, API_URL) }} style={{ width: '100%', height: '100%', borderRadius: 27 }} />
             ) : (
               <View style={{ width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center' }}>
                 <Ionicons name="person" size={26} color="#FFF" />
@@ -253,7 +254,7 @@ export default function UserHomeScreen({ navigation }) {
         <View style={{ marginTop: 28 }}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: Spacing.xxl, marginBottom: 18, alignItems: 'center' }}>
             <Text style={{ fontSize: 22, fontWeight: '800', color: colors.textPrimary }}>Categories</Text>
-            <TouchableOpacity>
+            <TouchableOpacity onPress={() => navigation.navigate('Search')}>
               <Text style={{ fontSize: 15, color: colors.primary, fontWeight: '700' }}>See All</Text>
             </TouchableOpacity>
           </View>

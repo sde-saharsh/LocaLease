@@ -9,6 +9,7 @@ import { useApp, useTheme } from '../../context/AppContext';
 import CustomButton from '../../components/CustomButton';
 import { Spacing, BorderRadius, Shadow } from '../../constants';
 import { extractCity } from '../../utils/locationUtils';
+import { resolveImageUri } from '../../utils/imageUtils';
 
 const { width } = Dimensions.get('window');
 
@@ -16,18 +17,21 @@ export default function ItemDetailsScreen({ route, navigation }) {
   const { item } = route.params;
   const colors = useTheme();
   const insets = useSafeAreaInsets();
-  const { wishlist, toggleWishlist, createRequest } = useApp();
+  const { wishlist, toggleWishlist, createRequest, API_URL } = useApp();
   const [activeSlide, setActiveSlide] = useState(0);
   const [loading, setLoading] = useState(false);
   const scrollX = useRef(new Animated.Value(0)).current;
   const itemId = item?._id || item?.id;
   const isWishlisted = wishlist.includes(itemId);
-  const images = Array.isArray(item?.images) && item.images.length
+  
+  const rawImages = Array.isArray(item?.images) && item.images.length
     ? item.images
     : ['https://via.placeholder.com/800x600?text=No+Image'];
+  const images = rawImages.map(img => resolveImageUri(img, API_URL));
+
   const owner = item?.owner || {};
   const ownerName = typeof owner?.name === 'string' ? owner.name : 'Unknown Owner';
-  const ownerAvatar = owner?.avatar || 'https://via.placeholder.com/100?text=U';
+  const ownerAvatar = resolveImageUri(owner?.avatar, API_URL);
   const ownerRating = typeof owner?.rating === 'number' ? owner.rating : 0;
   const ownerReviews = typeof owner?.reviews === 'number' ? owner.reviews : 0;
   const displayLocation = typeof item?.location === 'string'
