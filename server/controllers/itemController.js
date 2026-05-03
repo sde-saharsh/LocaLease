@@ -1,4 +1,5 @@
 const Item = require('../models/Item');
+const { formatItemImages } = require('../utils/urlFormatter');
 
 // @desc    Get all items (with filters)
 // @route   GET /api/items
@@ -34,7 +35,11 @@ exports.getItems = async (req, res) => {
     }
 
     const items = await Item.find(query).populate('owner', 'name avatar rating');
-    res.json(items);
+    
+    // Format image URLs for each item
+    const formattedItems = items.map(item => formatItemImages(item, req));
+    
+    res.json(formattedItems);
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
   }
@@ -60,12 +65,28 @@ exports.createItem = async (req, res) => {
       };
     }
 
+    // Strip base URL from image paths before saving to DB to keep it host-agnostic
+    if (payload.images && Array.isArray(payload.images)) {
+      const host = req.get('host');
+      payload.images = payload.images.map(img => {
+        if (typeof img === 'string' && img.includes(host)) {
+          // Extract the path after the host
+          const parts = img.split(host);
+          return parts[parts.length - 1];
+        }
+        return img;
+      });
+    }
+
     const item = await Item.create({
       ...payload,
       owner: req.user.id,
     });
     console.log(`✅ Item created successfully: ${item.title}`);
-    res.status(201).json(item);
+    
+    // Populate owner to format response correctly
+    const populatedItem = await Item.findById(item._id).populate('owner', 'name avatar rating');
+    res.status(201).json(formatItemImages(populatedItem, req));
   } catch (error) {
     console.error('Create Item error:', error);
     // Handle Mongoose validation errors
@@ -83,7 +104,7 @@ exports.getItemById = async (req, res) => {
   try {
     const item = await Item.findById(req.params.id).populate('owner', 'name avatar rating reviews location');
     if (item) {
-      res.json(item);
+      res.json(formatItemImages(item, req));
     } else {
       res.status(404).json({ message: 'Item not found' });
     }
@@ -107,8 +128,15 @@ exports.updateItem = async (req, res) => {
     if (!updates.address && updates.location && typeof updates.location === 'string') {
       updates.address = updates.location;
     }
-    const updatedItem = await Item.findByIdAndUpdate(req.params.id, updates, { new: true });
-    res.json(updatedItem);
+    
+    // Strip base URL from images if present
+    if (updates.images && Array.isArray(updates.images)) {
+      const baseUrl = `${req.protocol}://${req.get('host')}`;
+      updates.images = updates.images.map(img => img.replace(baseUrl, ''));
+    }
+
+    const updatedItem = await Item.findByIdAndUpdate(req.params.id, updates, { new: true }).populate('owner', 'name avatar rating');
+    res.json(formatItemImages(updatedItem, req));
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
   }
@@ -131,3 +159,4 @@ exports.deleteItem = async (req, res) => {
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
+

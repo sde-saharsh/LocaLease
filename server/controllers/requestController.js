@@ -1,5 +1,6 @@
 const Request = require('../models/Request');
 const Item = require('../models/Item');
+const { formatItemImages, formatUserAvatar } = require('../utils/urlFormatter');
 
 // @desc    Create rental request
 // @route   POST /api/requests
@@ -35,7 +36,14 @@ exports.getMyRequests = async (req, res) => {
       .populate('item', 'title images price')
       .populate('lender', 'name avatar')
       .sort('-createdAt');
-    res.json(requests);
+      
+    const formatted = requests.map(reqDoc => {
+      const r = reqDoc.toObject();
+      if (r.item) r.item = formatItemImages(r.item, req);
+      if (r.lender) r.lender = formatUserAvatar(r.lender, req);
+      return r;
+    });
+    res.json(formatted);
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
   }
@@ -49,7 +57,14 @@ exports.getLenderRequests = async (req, res) => {
       .populate('item', 'title images price')
       .populate('renter', 'name avatar')
       .sort('-createdAt');
-    res.json(requests);
+      
+    const formatted = requests.map(reqDoc => {
+      const r = reqDoc.toObject();
+      if (r.item) r.item = formatItemImages(r.item, req);
+      if (r.renter) r.renter = formatUserAvatar(r.renter, req);
+      return r;
+    });
+    res.json(formatted);
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
   }

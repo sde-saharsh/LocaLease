@@ -1,5 +1,6 @@
 const User = require('../models/User');
 const jwt = require('jsonwebtoken');
+const { formatUserAvatar } = require('../utils/urlFormatter');
 
 const JWT_SECRET =
   (process.env.JWT_SECRET && process.env.JWT_SECRET.trim()) ||
@@ -99,13 +100,7 @@ const loginWithRole = async (req, res, next, expectedRole = null) => {
     console.log(`Login successful: ${email}`);
     const token = generateToken(user._id);
     return res.json({
-      user: {
-        _id: user._id,
-        name: user.name,
-        email: user.email,
-        role: userRole,
-        avatar: user.avatar,
-      },
+      user: formatUserAvatar(user, req),
       token,
     });
   } catch (error) {
@@ -138,7 +133,7 @@ exports.getProfile = async (req, res) => {
   try {
     const user = await User.findById(req.user.id).select('-password');
     if (user) {
-      res.json(user);
+      res.json(formatUserAvatar(user, req));
     } else {
       res.status(404).json({ message: 'User not found' });
     }

@@ -11,10 +11,9 @@ router.route('/')
 
 router.post('/upload', protect, upload.array('images', 5), (req, res) => {
   const urls = req.files.map(file => {
-    // If it's a local file, it will have a filename property
+    // If it's a local file, return the relative path
     if (file.filename && !file.path.startsWith('http')) {
-      const baseUrl = `${req.protocol}://${req.get('host')}`;
-      return `${baseUrl}/uploads/${file.filename}`;
+      return `/uploads/${file.filename}`;
     }
     // Cloudinary returns the URL in path or secure_url
     return file.path;
